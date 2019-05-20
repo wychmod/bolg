@@ -1,0 +1,26 @@
+{% extends 'common/base.html' %}
+{% block title %}
+    搜索...
+{% endblock %}
+{% block page_content %}
+    {#  展示博客的样式  #}
+    {% for row in data %}
+        <div class="media">
+            <a href="{{ url_for('posts.posts_detail',pid=row.id) }}" style="color:#000;text-decoration: none;" target="_blank">
+                <div class="media-left media-middle">
+                    <img class="media-object" src="{{ url_for('static',filename='upload/'+row.user.icon) }}" alt="..."
+                         width="150">
+                </div>
+                <div class="media-body">
+                    <h4 class="media-heading">{{ row.title|replace_red(con)|safe }} <span
+                            style="float: right;font-size:14px;color:#ccc;">{{ moment(row.timestamp).fromNow() }}</span>
+                    </h4>
+                    {{ row.article|striptags|showEllipsis|replace_red(con)|safe }}
+                </div>
+            </a>
+        </div>
+    {% endfor %}
+        {#  分页  #}
+        {% from 'common/page_macro.html' import page_macro %}
+        {{ page_macro('posts.search',pagination,search=con) }}
+{% endblock %}

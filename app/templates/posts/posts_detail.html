@@ -1,0 +1,93 @@
+{% extends 'common/base.html' %}
+{% block title %}
+    博客详情
+{% endblock %}
+{% block page_content %}
+    <h2 class="page-header">{{ p.title }}</h2>
+    {{ p.article|safe }}
+    <span style="float: right;">
+        <hr>
+        <p><span style="font-weight: bold;font-size: 14px;cursor: pointer" onclick="favorite({{ p.id }})"
+                 id="f{{ p.id }}">{% if current_user.is_authenticated %}{% if current_user.is_favorite(p.id) %}取消收藏
+        {% else %}收藏{% endif %}{% else %}收藏{% endif %}</span></p>
+        <p><span style="font-weight: bold;font-size: 14px;">作者:</span>{{ p.user.username }}</p>
+        <p><span style="font-weight: bold;font-size: 14px;">发表时间:</span>{{ moment(p.timestamp).format('Y-M-D H:m:s') }}</p>
+    </span>
+    <div style="clear: both;"></div>
+    {#  博客的评论与回复的展示  #}
+    <div class="page-header" style="color: green;"><h3>评论详情</h3></div>
+    {% for com in comment %}
+        <div class="media" style="margin-bottom: 5px;">
+            <div class="media-left media-middle">
+                <a href="#">
+                    <img class="media-object" src="{{ url_for('static',filename='upload/'+com.user.icon) }}" alt="..."
+                         width="50" style="border-radius: 10px;">
+                </a>
+            </div>
+            <div class="media-body">
+                <h4 class="media-heading">
+                    {% if p.id == com.pid %}
+                        {{ com.user.username }}
+                    {% else %}
+                        {{ com.user.username }}回复了{{ com.pid|replayName }}
+                    {% endif %}
+                    <span style="float: right;color: #ccc;font-size:14px;">{{ moment(com.timestamp).fromNow() }} &nbsp;&nbsp;&nbsp;<button type="button" class="btn btn-danger btn-xs" onclick="show({{ com.id }})">回复</button></span></h4>
+                {{ com.article }}
+            </div>
+        </div>
+        <form action="{{ url_for('posts.comment') }}" method="post" id="{{ com.id }}" class="replay">
+            <input type="hidden" name="id" value="{{ p.id }}">
+            <input type="hidden" name="rid" value="{{ com.id }}">
+            <input type="hidden" name="path" value="{{ com.path }}">
+            {{ form.article(class="form-control",placeholder="评论内容在5~50字之间",maxlength=50,minlength=5,style="resize:none;height:90px;") }}
+            <p>评论内容在5~50字之间</p>
+            <button type="submit" class="btn btn-success btn-sm" style="margin-bottom:5px;">回复</button>
+        </form>
+    {% endfor %}
+
+
+    {#  发表评论样式  #}
+    <div class="page-header" style="color: green;"><h3>发表评论</h3></div>
+    <form action="{{ url_for('posts.comment') }}" method="post">
+        <input type="hidden" name="id" value="{{ p.id }}">
+        <input type="hidden" name="path" value="{{ p.path }}">
+        {{ form.article(class="form-control",placeholder="评论内容在5~50字之间",maxlength=50,minlength=5,style="resize:none;height:90px;") }}
+        <p>评论内容在5~50字之间</p>
+        <button type="submit" class="btn btn-success" style="margin-bottom: 100px;">发表评论</button>
+    </form>
+
+
+{% endblock %}
+{% block scripts %}
+    {{ super() }}
+    <script>
+        {#    将所有的回复样式隐藏    #}
+        $(function () {
+           $('.replay').hide();
+        });
+        {# 对点击的对应回复展示样式 #}
+        function show(id) {
+           $('.replay').hide();
+            $('#'+id).show();
+        }
+
+        {#    处理收藏与取消收藏    #}
+        function favorite(id) {
+            {#    获取收藏与取消收藏的节点    #}
+            var node = $('#f' + id);
+            $.get({{ url_for('posts.dofavorite') }}, {'id': id}, function (data, status) {
+                if (data.code == 200) {
+                    if (node.text() == '收藏') {
+                        node.text('取消收藏')
+                    } else {
+                        node.text('收藏')
+                    }
+                } else {
+                    if (window.confirm('您是否还没有登录？\n请前去登录')) {
+                        window.location.href = {{ url_for('user.login') }};
+                    }
+                }
+            });
+        }
+    </script>
+{% endblock %}
